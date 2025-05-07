@@ -227,4 +227,36 @@ void defaults::set_http_timeout(long timeout_seconds)
   instance()->_http_timeout = timeout_seconds;
 }
 
+std::string defaults::ssl_cert_file()
+{
+  // Check environment variable first
+  auto env_val = std::getenv("KVIKIO_SSL_CERT_FILE");
+  if (env_val != nullptr) { return std::string{env_val}; }
+
+  static std::string s_ssl_cert_file = "";
+  return s_ssl_cert_file;
+}
+
+void defaults::set_ssl_cert_file(std::string const& path)
+{
+  static std::string s_ssl_cert_file = "";
+  s_ssl_cert_file                    = path;
+}
+
+std::string defaults::ssl_cert_dir()
+{
+  // Check environment variable first
+  auto env_val = std::getenv("KVIKIO_SSL_CERT_DIR");
+  if (env_val != nullptr) { return std::string{env_val}; }
+
+  static std::string s_ssl_cert_dir = "";
+  return s_ssl_cert_dir;
+}
+
+void defaults::set_ssl_cert_dir(std::string const& path)
+{
+  static std::string s_ssl_cert_dir = "";
+  s_ssl_cert_dir                    = path;
+}
+
 }  // namespace kvikio

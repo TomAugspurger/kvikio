@@ -293,6 +293,34 @@ class defaults {
    * @param status_codes The HTTP status codes to retry.
    */
   static void set_http_status_codes(std::vector<int> status_codes);
+
+  /**
+   * @brief Get the SSL certificate file path.
+   *
+   * @return The SSL certificate file path.
+   */
+  [[nodiscard]] static std::string ssl_cert_file();
+
+  /**
+   * @brief Set the SSL certificate file path.
+   *
+   * @param path The path to the SSL certificate file.
+   */
+  static void set_ssl_cert_file(std::string const& path);
+
+  /**
+   * @brief Get the SSL certificate directory path.
+   *
+   * @return The SSL certificate directory path.
+   */
+  [[nodiscard]] static std::string ssl_cert_dir();
+
+  /**
+   * @brief Set the SSL certificate directory path.
+   *
+   * @param path The path to the SSL certificate directory.
+   */
+  static void set_ssl_cert_dir(std::string const& path);
 };
 
 }  // namespace kvikio

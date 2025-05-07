@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <unistd.h>  // For access()
 #include <algorithm>
 #include <chrono>
 #include <cstring>
@@ -112,6 +113,27 @@ CurlHandle::CurlHandle(LibCurl::UniqueHandlePtr handle,
 
   // Make requests time out after `value` seconds.
   setopt(CURLOPT_TIMEOUT, kvikio::defaults::http_timeout());
+
+  // Set certificate verification behavior
+  auto custom_cainfo = kvikio::defaults::ssl_cert_file();
+  auto custom_capath = kvikio::defaults::ssl_cert_dir();
+
+  if (!custom_cainfo.empty()) {
+    // User specified a custom certificate file
+    setopt(CURLOPT_CAINFO, custom_cainfo.c_str());
+  } else if (!custom_capath.empty()) {
+    // User specified a custom certificate directory
+    setopt(CURLOPT_CAPATH, custom_capath.c_str());
+  } else {
+    // Try common certificate paths on Unix-like systems
+    if (access("/etc/ssl/certs/ca-certificates.crt", F_OK) != -1) {
+      setopt(CURLOPT_CAINFO, "/etc/ssl/certs/ca-certificates.crt");
+    } else if (access("/etc/pki/tls/certs/ca-bundle.crt", F_OK) != -1) {
+      setopt(CURLOPT_CAINFO, "/etc/pki/tls/certs/ca-bundle.crt");
+    } else if (access("/etc/ssl/certs", F_OK) != -1) {
+      setopt(CURLOPT_CAPATH, "/etc/ssl/certs");
+    }
+  }
 }
 
 CurlHandle::~CurlHandle() noexcept { LibCurl::instance().retain_handle(std::move(_handle)); }
