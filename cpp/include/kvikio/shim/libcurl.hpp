@@ -190,6 +190,17 @@ __attribute__((noinline)) inline std::string fix_conda_file_path_hack(std::strin
 }  // namespace detail
 
 /**
+ * @brief URL encode a string using libcurl's escape function.
+ *
+ * This function URL encodes special characters according to RFC 3986,
+ * which is required for S3 object keys containing special characters.
+ *
+ * @param str The string to URL encode.
+ * @returns The URL encoded string.
+ */
+std::string url_encode(std::string const& str);
+
+/**
  * @brief Create a new curl handle.
  *
  * @returns A `kvikio::CurlHandle` instance ready to be used.

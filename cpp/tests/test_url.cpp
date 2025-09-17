@@ -18,6 +18,7 @@
 #include <gtest/gtest.h>
 
 #include <kvikio/detail/url.hpp>
+#include <kvikio/shim/libcurl.hpp>
 #include <stdexcept>
 
 using ::testing::HasSubstr;
@@ -61,4 +62,37 @@ TEST(UrlTest, parse_host)
   for (auto const& invalid_host_url : invalid_host_urls) {
     EXPECT_THROW({ kvikio::detail::UrlParser::parse(invalid_host_url); }, std::runtime_error);
   }
+}
+
+TEST(UrlTest, url_encode)
+{
+  // Test encoding of special characters that require URL encoding for S3 object keys
+  // according to AWS S3 guidelines
+
+  // Test basic alphanumeric characters (should remain unchanged)
+  EXPECT_EQ(kvikio::url_encode("test123"), "test123");
+  EXPECT_EQ(kvikio::url_encode("Test_file-name.txt"), "Test_file-name.txt");
+
+  // Test that forward slashes are preserved (important for S3 object paths)
+  EXPECT_EQ(kvikio::url_encode("path/to/file"), "path/to/file");
+
+  // Test characters that require special handling according to AWS docs
+  EXPECT_EQ(kvikio::url_encode("file=name"), "file%3Dname");  // Equal sign
+  EXPECT_EQ(kvikio::url_encode("file&name"), "file%26name");  // Ampersand
+  EXPECT_EQ(kvikio::url_encode("file$name"), "file%24name");  // Dollar sign
+  EXPECT_EQ(kvikio::url_encode("file@name"), "file%40name");  // At symbol
+  EXPECT_EQ(kvikio::url_encode("file+name"), "file%2Bname");  // Plus sign
+  EXPECT_EQ(kvikio::url_encode("file name"), "file%20name");  // Space
+  EXPECT_EQ(kvikio::url_encode("file,name"), "file%2Cname");  // Comma
+  EXPECT_EQ(kvikio::url_encode("file?name"), "file%3Fname");  // Question mark
+  EXPECT_EQ(kvikio::url_encode("file;name"), "file%3Bname");  // Semicolon
+  EXPECT_EQ(kvikio::url_encode("file:name"), "file%3Aname");  // Colon
+
+  // Test complex object names with multiple special characters
+  EXPECT_EQ(kvikio::url_encode("my-data=2024&type=csv"), "my-data%3D2024%26type%3Dcsv");
+  // Forward slashes should NOT be encoded as they are path separators
+  EXPECT_EQ(kvikio::url_encode("folder/file name+data.csv"), "folder/file%20name%2Bdata.csv");
+
+  // Test empty string
+  EXPECT_EQ(kvikio::url_encode(""), "");
 }

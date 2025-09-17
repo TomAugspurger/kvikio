@@ -303,6 +303,10 @@ std::string S3Endpoint::url_from_bucket_and_object(std::string bucket_name,
 {
   KVIKIO_NVTX_FUNC_RANGE();
   auto const endpoint_url = unwrap_or_default(std::move(aws_endpoint_url), "AWS_ENDPOINT_URL");
+
+  // URL encode the object name to handle special characters according to AWS S3 guidelines
+  auto const encoded_object_name = url_encode(object_name);
+
   std::stringstream ss;
   if (endpoint_url.empty()) {
     auto const region =
@@ -312,9 +316,9 @@ std::string S3Endpoint::url_from_bucket_and_object(std::string bucket_name,
     // "s3" is a non-standard URI scheme used by AWS CLI and AWS SDK, and cannot be identified by
     // libcurl. A valid HTTP/HTTPS URL needs to be constructed for use in libcurl. Here the AWS
     // virtual host style is used.
-    ss << "https://" << bucket_name << ".s3." << region << ".amazonaws.com/" << object_name;
+    ss << "https://" << bucket_name << ".s3." << region << ".amazonaws.com/" << encoded_object_name;
   } else {
-    ss << endpoint_url << "/" << bucket_name << "/" << object_name;
+    ss << endpoint_url << "/" << bucket_name << "/" << encoded_object_name;
   }
   return ss.str();
 }

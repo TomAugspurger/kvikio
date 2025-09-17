@@ -18,6 +18,7 @@
 #include <chrono>
 #include <cstring>
 #include <functional>
+#include <iomanip>
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -194,4 +195,65 @@ void CurlHandle::perform()
   }
   KVIKIO_FAIL(ss.str(), std::runtime_error);
 }
+
+std::string url_encode(std::string const& str)
+{
+  // Custom URL encoding for S3 object keys that only encodes problematic characters
+  // while preserving forward slashes and other valid URL path characters.
+  // Based on AWS S3 object key naming guidelines.
+
+  std::string result;
+  result.reserve(str.length() * 3);  // Reserve space for worst case (all chars encoded)
+
+  for (char c : str) {
+    // Characters that need to be percent-encoded for S3 object keys
+    // Based on AWS documentation: characters that might require special handling
+    switch (c) {
+      case ' ': result += "%20"; break;
+      case '!':
+      case '*':
+      case '\'':
+      case '/':
+      case '(':
+      case ')':
+      case '-':
+      case '_':
+      case '.':
+        // These are safe characters that don't need encoding
+        result += c;
+        break;
+      case '&': result += "%26"; break;
+      case '$': result += "%24"; break;
+      case '@': result += "%40"; break;
+      case '=': result += "%3D"; break;
+      case ';': result += "%3B"; break;
+      case ':': result += "%3A"; break;
+      case '+': result += "%2B"; break;
+      case ',': result += "%2C"; break;
+      case '?': result += "%3F"; break;
+      default:
+        // Check if it's an alphanumeric character or forward slash (path separator)
+        if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') ||
+            c == '/') {
+          result += c;
+        } else if (static_cast<unsigned char>(c) < 32 || static_cast<unsigned char>(c) == 127) {
+          // Control characters (ASCII 0-31 and 127) need encoding
+          std::ostringstream oss;
+          oss << "%" << std::hex << std::uppercase << std::setfill('0') << std::setw(2)
+              << static_cast<unsigned int>(static_cast<unsigned char>(c));
+          result += oss.str();
+        } else {
+          // For any other character, encode it to be safe
+          std::ostringstream oss;
+          oss << "%" << std::hex << std::uppercase << std::setfill('0') << std::setw(2)
+              << static_cast<unsigned int>(static_cast<unsigned char>(c));
+          result += oss.str();
+        }
+        break;
+    }
+  }
+
+  return result;
+}
+
 }  // namespace kvikio
